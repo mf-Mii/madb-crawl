@@ -2,6 +2,7 @@ import asyncio
 import time
 
 import requests
+from requests_doh import DNSOverHTTPSAdapter
 import madb_api
 import recaptcha
 from logger import Logger
@@ -12,7 +13,11 @@ logger = Logger('EasyMC.io')
 def doCrawl(reCaptchaToken = None):
     logger.info('Generating EasyMC.io ALT')
     reCaptchaParam = '' if reCaptchaToken == None else '&captcha=' + reCaptchaToken
-    response = requests.get(f"https://api.easymc.io/v1/token?new=true{reCaptchaParam}")
+    doh_adapter = DNSOverHTTPSAdapter(provider='cloudflare-security')
+    session = requests.Session()
+    session.mount('https://', doh_adapter)
+    session.mount('http://', doh_adapter)
+    response = session.get(f"https://api.easymc.io/v1/token?new=true{reCaptchaParam}")
     if response.status_code == 200:
         print(response.text)
         json = response.json()
