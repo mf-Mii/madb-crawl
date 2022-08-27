@@ -32,7 +32,7 @@ def doCrawl(reCaptchaToken = None):
             print()
     elif response.status_code == 400:
         logger.warn('Captcha required. Trying solving...')
-        token = recaptcha.resolveV2('https://easymc.io/get?new')
+        token = recaptcha.resolve_v2('https://easymc.io/get?new')
         # logger.info(token)
         doCrawl(token)
     else:
