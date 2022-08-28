@@ -1,4 +1,6 @@
 import pyautogecko as pyautogecko
+import requests
+from requests import Session
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 
@@ -36,5 +38,10 @@ def get_browser():
 
 if __name__ == '__main__':
     loadModules()
+    headers = {
+        'Host': 'api.easymc.io'
+    }
+    rsp = requests.get('http://104.21.87.64/v1/token?new=true', headers=headers)
+    print(rsp.json())
 
 # PyCharm のヘルプは https://www.jetbrains.com/help/pycharm/ を参照してください

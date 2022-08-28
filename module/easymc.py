@@ -3,8 +3,8 @@ import time
 
 import requests
 from requests_doh import DNSOverHTTPSAdapter
+
 import madb_api
-import recaptcha
 from logger import Logger
 
 logger = Logger('EasyMC.io')
@@ -13,7 +13,7 @@ logger = Logger('EasyMC.io')
 def doCrawl(reCaptchaToken = None):
     logger.info('Generating EasyMC.io ALT')
     reCaptchaParam = '' if reCaptchaToken == None else '&captcha=' + reCaptchaToken
-    doh_adapter = DNSOverHTTPSAdapter(provider='cloudflare-security')
+    doh_adapter = DNSOverHTTPSAdapter(provider='cloudflare')
     session = requests.Session()
     session.mount('https://', doh_adapter)
     session.mount('http://', doh_adapter)
@@ -37,9 +37,10 @@ def doCrawl(reCaptchaToken = None):
             print()
     elif response.status_code == 400:
         logger.warn('Captcha required. Trying solving...')
-        token = recaptcha.resolve_v2('https://easymc.io/get?new')
+        #token = recaptcha.resolve_v2('https://easymc.io/get?new')
         # logger.info(token)
-        doCrawl(token)
+        logger.error('reCaptcha solver was not completed')
+        #doCrawl(token)
     else:
         logger.error('{} | {}'.format(response.status_code, response.json()['error']))
 
