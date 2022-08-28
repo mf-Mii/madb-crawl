@@ -1,9 +1,6 @@
 import io
 
 import requests
-from pypasser import reCaptchaV2
-from pypasser import reCaptchaV3
-from pypasser.structs import Proxy
 from selenium.webdriver.common.by import By
 from PIL import Image
 
@@ -55,11 +52,3 @@ def solve_v2_sel_all(recaptcha_frame):
             tile_img.save('data/{}.{}.jpg'.format(vertical, width))
 
 
-
-def resolveV3(url):
-    proxy = getProxy()
-    useProxy = proxy != {}
-    if useProxy:
-        return reCaptchaV3(url, getProxy())
-    else:
-        return reCaptchaV3(url)
