@@ -2,7 +2,9 @@ import asyncio
 import random
 import string
 import time
+from selenium.webdriver.common.by import By
 
+import browser
 import recaptcha
 import requests
 
@@ -23,27 +25,47 @@ class AltsPizzaAccount:
     @staticmethod
     def login(email: str, pw: str):
         logger.info('Login Challenge {}:{}'.format(email, pw))
-        recaptcha_token = recaptcha.resolve_v2('https://www.google.com/recaptcha/api2/anchor?ar=1&k=6LfwhowfAAAAAFUbWzxDwfYG5n1wbi-fvud7peyC&co=aHR0cHM6Ly9kYXNoYm9hcmQuYWx0cy5waXp6YTo0NDM.&hl=en&v=3TZgZIog-UsaFDv31vC4L9R_&theme=light&size=invisible&cb=t0f89paj8nxd')
-        req_data = {
-            'username': email,
-            'password': pw,
-            'recaptcha': recaptcha_token
-        }
-        headers = {
-            'Content-Type': 'application/json'
-        }
-        resp = requests.post(config.getAPIBase() + '/auth/login', data=req_data, headers=headers).json()
-        if resp['success']:
-            ac_tk = resp['data']['accessToken']
-            rf_tk = resp['data']['refreshToken']
-            name = resp['data']['username']
-            plan = resp['data']['plan']
-            return AltsPizzaAccount(name, email, pw, plan, ac_tk, rf_tk)
-        else:
-            messages = ''
-            for msg_obj in resp['message']:
-                messages += msg_obj['msg']
-            raise LoginException(messages)
+        b = browser.Browser()
+        driver = b.get_driver()
+        b.open('https://dashboard.alts.pizza/login')
+        driver.find_element(By.XPATH, '//*[@id="root"]/div/div[2]/div/form/div[1]/div/input').send_keys(email)
+        time.sleep(1)
+        driver.find_element(By.XPATH, '//*[@id="root"]/div/div[2]/div/form/div[2]/div/input').send_keys(pw)
+        time.sleep(1)
+        driver.find_element(By.XPATH, '//*[@id="root"]/div/div[2]/div/form/button').click()
+        try_cnt = 0
+        while True:
+            if driver.current_url != 'https://dashboard.alts.pizza/login':
+                break
+            time.sleep(1)
+            try_cnt += 1
+            if try_cnt > 10:
+                logger.warn('Failed to login')
+                break
+        if try_cnt > 10:
+            return 'Error'
+        #
+        #recaptcha_token = recaptcha.resolve_v2('https://www.google.com/recaptcha/api2/anchor?ar=1&k=6LfwhowfAAAAAFUbWzxDwfYG5n1wbi-fvud7peyC&co=aHR0cHM6Ly9kYXNoYm9hcmQuYWx0cy5waXp6YTo0NDM.&hl=en&v=3TZgZIog-UsaFDv31vC4L9R_&theme=light&size=invisible&cb=t0f89paj8nxd')
+        #req_data = {
+        #    'username': email,
+        #    'password': pw,
+        #    'recaptcha': recaptcha_token
+        #}
+        #headers = {
+        #    'Content-Type': 'application/json'
+        #}
+        #resp = requests.post(config.getAPIBase() + '/auth/login', data=req_data, headers=headers).json()
+        #if resp['success']:
+        #    ac_tk = resp['data']['accessToken']
+        #    rf_tk = resp['data']['refreshToken']
+        #    name = resp['data']['username']
+        #    plan = resp['data']['plan']
+        #    return AltsPizzaAccount(name, email, pw, plan, ac_tk, rf_tk)
+        #else:
+        #    messages = ''
+        #    for msg_obj in resp['message']:
+        #        messages += msg_obj['msg']
+        #    raise LoginException(messages)
 
     @staticmethod
     def register(username: str = ''.join(random.choices(string.ascii_letters + string.digits, k=12)),
