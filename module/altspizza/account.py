@@ -5,6 +5,7 @@ import time
 from selenium.webdriver.common.by import By
 
 import browser
+import main
 import recaptcha
 import requests
 
@@ -25,9 +26,8 @@ class AltsPizzaAccount:
     @staticmethod
     def login(email: str, pw: str):
         logger.info('Login Challenge {}:{}'.format(email, pw))
-        b = browser.Browser()
-        driver = b.get_driver()
-        b.open('https://dashboard.alts.pizza/login')
+        driver = main.get_browser()
+        driver.get('https://dashboard.alts.pizza/login')
         driver.find_element(By.XPATH, '//*[@id="root"]/div/div[2]/div/form/div[1]/div/input').send_keys(email)
         time.sleep(1)
         driver.find_element(By.XPATH, '//*[@id="root"]/div/div[2]/div/form/div[2]/div/input').send_keys(pw)
