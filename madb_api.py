@@ -9,7 +9,7 @@ def addWithToken(src, accessToken, refreshToken):
         'accessToken': accessToken,
         'refreshToken': refreshToken
     }
-    add(data)
+    return add(data)
 
 def addWithCombo(src, mail, password):
     print('Disabled')

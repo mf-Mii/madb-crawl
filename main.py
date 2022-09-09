@@ -10,7 +10,7 @@ from proxies import Proxies
 
 
 def loadModules():
-    easymc.startCrawl()
+    #easymc.startCrawl()
     altspizza.startCrawl()
 
 

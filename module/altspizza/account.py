@@ -23,7 +23,7 @@ class AltsPizzaAccount:
     @staticmethod
     def login(email: str, pw: str):
         logger.info('Login Challenge {}:{}'.format(email, pw))
-        recaptcha_token = recaptcha.reCaptchaV3('https://www.google.com/recaptcha/api2/anchor?ar=1&k=6LfwhowfAAAAAFUbWzxDwfYG5n1wbi-fvud7peyC&co=aHR0cHM6Ly9kYXNoYm9hcmQuYWx0cy5waXp6YTo0NDM.&hl=en&v=3TZgZIog-UsaFDv31vC4L9R_&theme=light&size=invisible&cb=t0f89paj8nxd')
+        recaptcha_token = recaptcha.resolve_v2('https://www.google.com/recaptcha/api2/anchor?ar=1&k=6LfwhowfAAAAAFUbWzxDwfYG5n1wbi-fvud7peyC&co=aHR0cHM6Ly9kYXNoYm9hcmQuYWx0cy5waXp6YTo0NDM.&hl=en&v=3TZgZIog-UsaFDv31vC4L9R_&theme=light&size=invisible&cb=t0f89paj8nxd')
         req_data = {
             'username': email,
             'password': pw,
