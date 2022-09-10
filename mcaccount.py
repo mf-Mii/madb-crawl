@@ -1,9 +1,10 @@
 import requests
 
 import main
+import logger
 from proxies import Proxies
 
-
+logger = logger.Logger('MinecraftAccount')
 class MinecraftAccount:
     def __init__(self, uuid: str, name: str, access_token: str = None, refresh_token: str = None):
         self.uuid = uuid
@@ -39,7 +40,7 @@ class MinecraftAccount:
                     'https': proxy
                 }
                 break
-
+        logger.info('Starting Login Request')
         resp = requests.post('https://authserver.mojang.com/authenticate', headers=headers, data=req_data, proxies=proxy_data)
         if resp.status_code == 200:
             resp = resp.json()
@@ -47,6 +48,7 @@ class MinecraftAccount:
             name = resp['selectedProfile']['name']
             ac_token = resp['accessToken']
             rf_token = resp['refreshToken']
+            logger.success(f"Login Success: {name}")
             return MinecraftAccount(uuid, name, ac_token, rf_token)
         else:
             return resp.json()['error'] + ':' + resp.json()['errorMessage']

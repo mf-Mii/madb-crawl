@@ -1,7 +1,10 @@
 import asyncio
+import json
 import random
 import string
 import time
+
+import schedule
 from selenium.webdriver.common.by import By
 
 import browser
@@ -22,6 +25,8 @@ class AltsPizzaAccount:
         self.pw = pw
         self.plan = plan
         self.token = {'access': access_token, 'refresh': refresh_token}
+        self.access_token = access_token
+        self.refresh_token = refresh_token
 
     @staticmethod
     def login(email: str, pw: str):
@@ -34,6 +39,7 @@ class AltsPizzaAccount:
         time.sleep(1)
         driver.find_element(By.XPATH, '//*[@id="root"]/div/div[2]/div/form/button').click()
         try_cnt = 0
+        logger.info("Trying login")
         while True:
             if driver.current_url != 'https://dashboard.alts.pizza/login':
                 break
@@ -44,6 +50,33 @@ class AltsPizzaAccount:
                 break
         if try_cnt > 10:
             return 'Error'
+        logger.success('Logged in')
+        ref_token = driver.get_cookie('_auth_refresh')['value']
+        token = driver.get_cookie('_auth')['value']
+        driver.close()
+        payload = json.dumps({
+          'refreshToken': ref_token
+        })
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': 'Bearer {}'.format(token)
+        }
+        logger.info('Requesting refresh token')
+        resp = requests.post(config.getAPIBase() + '/auth/refresh', data=payload, headers=headers).json()
+        #logger.info(token)
+        #logger.info(ref_token)
+        #logger.info(resp)
+        if resp['success']:
+            a_tkn = resp['data']['accessToken']
+            r_tkn = resp['data']['refreshToken']
+            name = resp['data']['user']['username']
+            plan = resp['data']['user']['plan']
+            logger.success('Login Success!!')
+            return AltsPizzaAccount(name, email, pw, plan, a_tkn, r_tkn)
+        else:
+            logger.warn('Failed to login')
+
         #
         #recaptcha_token = recaptcha.resolve_v2('https://www.google.com/recaptcha/api2/anchor?ar=1&k=6LfwhowfAAAAAFUbWzxDwfYG5n1wbi-fvud7peyC&co=aHR0cHM6Ly9kYXNoYm9hcmQuYWx0cy5waXp6YTo0NDM.&hl=en&v=3TZgZIog-UsaFDv31vC4L9R_&theme=light&size=invisible&cb=t0f89paj8nxd')
         #req_data = {
@@ -91,12 +124,12 @@ class AltsPizzaAccount:
         else:
             return False
 
-    refresh_loop = asyncio.new_event_loop()
+    refresh_loop = True
 
     def getProgress(self, alt_type: str = 'nfa'):
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + self.token['access']
+            'Authorization': 'Bearer ' + self.access_token
         }
         resp = requests.get(config.getAPIBase() + '/alt/comsumed/{}'.format(alt_type), headers=headers).json()
         if resp['success']:
@@ -107,7 +140,7 @@ class AltsPizzaAccount:
     def generateAlt(self, alt_type: str = 'nfa'):
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + self.token['access']
+            'Authorization': 'Bearer ' + self.access_token
         }
         resp = requests.get(config.getAPIBase() + '/alt/{}'.format(alt_type), headers=headers).json()
         if resp['success']:
@@ -115,26 +148,61 @@ class AltsPizzaAccount:
         else:
             return resp['message']
 
+    def is_referrer_used(self):
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + self.access_token
+        }
+        resp = requests.get(config.getAPIBase() + '/referral/check', headers=headers)
+        if resp.status_code == 200:
+            return resp.json()['status']
+        return False
+
+    def update_account_info(self):
+        ac_data = {
+            'mail': self.email,
+            'pass': self.pw,
+            'user': self.name,
+            'progress': self.getProgress(),
+            'referrer_used': self.is_referrer_used()
+        }
+        data = config.get_data()
+        data['reset'] = self.get_reset_time()
+        for i in range(len(data['accounts'])):
+            _a = data['accounts'][i]
+            if _a['mail'] == self.email:
+                data['accounts'][i] = ac_data
+                break
+        config.save_config(data)
+
+    def get_reset_time(self):
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + self.access_token
+        }
+        resp = requests.get(config.getAPIBase() + '/stat/reset', headers=headers)
+        if resp.status_code == 200:
+            return resp.json()['data']['resetTime']
+        return None
+
 
     async def do_refresh_token(self):
         req_data = {
-            'refreshToken': self.token['refresh']
+            'refreshToken': self.refresh_token
         }
         headers = {
             'Content-Type': 'application/json',
-            'Authorization': 'Bearer ' + self.token['access']
+            'Authorization': 'Bearer ' + self.access_token
         }
-        resp = requests.post(config.getAPIBase(), data=req_data, headers=headers).json()
+        resp = requests.post(config.getAPIBase() + '/auth/refresh', data=req_data, headers=headers).json()
         if resp['success']:
-            self.token['access'] = resp['data']['accessToken']
-            self.token['refresh'] = resp['data']['refreshToken']
-            await asyncio.sleep(300)
+            self.access_token = resp['data']['accessToken']
+            self.refresh_token = resp['data']['refreshToken']
         else:
-            self.refresh_loop.stop()
+            self.refresh_loop = False
 
-    def start_auto_refresh_token(self):
-        self.refresh_loop.run_until_complete(self.do_refresh_token())
-        try:
-            self.refresh_loop.run_forever()
-        finally:
-            self.refresh_loop.close()
+    async def start_auto_refresh_token(self):
+        schedule.every(5).minutes.do(self.do_refresh_token())
+        while True:
+            schedule.run_pending()
+            time.sleep(1)
