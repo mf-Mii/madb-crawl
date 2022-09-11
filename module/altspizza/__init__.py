@@ -57,7 +57,7 @@ def do_crawl():
                 else:
                     logger.warn(madb_res['message'])
             else:
-                alt_logger.fail(response['data']['username'])
+                alt_logger.fail(response['data']['username'], response['data']['skin'])
                 logger.warn(f"Failed to login | {response['data']['username']} | {alt}")
         except KeyError:
             print('KeyError Happen')
