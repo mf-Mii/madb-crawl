@@ -48,7 +48,7 @@ class MinecraftAccount:
             name = resp['selectedProfile']['name']
             access_token = resp['accessToken']
             client_token = resp['clientToken']
-            logger.success(f"Login Success: {name}")
+            #logger.success(f"Login Success: {name}")
             return MinecraftAccount(uuid, name, access_token, client_token)
         else:
             return resp.json()['error'] + ':' + resp.json()['errorMessage']

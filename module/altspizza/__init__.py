@@ -51,7 +51,7 @@ def do_crawl():
             if isinstance(alt, MinecraftAccount):
                 logger.success(f"Success to login alt | {alt.name}")
                 madb_res = madb_api.add_with_token('Alts.pizza', alt.ac_token, alt.cl_token)
-                logger.info(madb_res)
+                #logger.info(madb_res)
                 if madb_res['status'] == 'success':
                     logger.success(f"New Account Added!!")
                 else:

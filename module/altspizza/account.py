@@ -194,7 +194,7 @@ class AltsPizzaAccount:
             'Authorization': 'Bearer ' + self.access_token
         }
         resp = requests.get(config.get_api_base() + '/referral/check', headers=headers)
-        logger.info(resp.text)
+        #logger.info(resp.text)
         if resp.status_code == 200:
             return resp.json()['status']
         return False
@@ -281,6 +281,7 @@ class AltsPizzaAccount:
             'Authorization': 'Bearer ' + self.access_token
         }
         resp = requests.post(config.get_api_base() + '/auth/refresh', data=req_data, headers=headers).json()
+        logger.info('Updated refresh token automatically')
         if resp['success']:
             self.access_token = resp['data']['accessToken']
             self.refresh_token = resp['data']['refreshToken']
@@ -289,6 +290,7 @@ class AltsPizzaAccount:
 
     async def start_auto_refresh_token(self):
         schedule.every(5).minutes.do(self.do_refresh_token())
+        logger.info('Started auto refresh token')
         while True:
             schedule.run_pending()
             time.sleep(1)

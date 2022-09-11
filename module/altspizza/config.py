@@ -2,7 +2,7 @@ import json
 import os.path
 import logger
 
-logger = logger.Logger()
+logger = logger.Logger("AltsPizzaConfig")
 class AltsPizzaConfig:
     global cnf
 
@@ -40,5 +40,5 @@ class AltsPizzaConfig:
     @staticmethod
     def save_config(data):
         logger.info('Saving alts.pizza.json')
-        with open('data/alts.pizza.json', 'w') as f:
+        with open('data/alts.pizza.json', 'w+') as f:
             json.dump(data, f, indent=4)
