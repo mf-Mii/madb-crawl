@@ -3,7 +3,7 @@ import os
 import requests
 
 
-def addWithToken(src, accessToken, refreshToken):
+def add_with_token(src, accessToken, refreshToken):
     data = {
         'src': src,
         'accessToken': accessToken,
@@ -11,8 +11,10 @@ def addWithToken(src, accessToken, refreshToken):
     }
     return add(data)
 
-def addWithCombo(src, mail, password):
+
+def add_with_combo(src, mail, password):
     print('Disabled')
+
 
 def add(data):
     headers = {

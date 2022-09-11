@@ -11,7 +11,7 @@ from proxies import Proxies
 
 def loadModules():
     #easymc.startCrawl()
-    altspizza.startCrawl()
+    altspizza.start_crawl()
 
 
 proxies = Proxies()

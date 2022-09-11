@@ -10,7 +10,7 @@ from logger import Logger
 logger = Logger('EasyMC.io')
 
 
-def doCrawl(reCaptchaToken = None):
+def do_crawl(reCaptchaToken=None):
     logger.info('Generating EasyMC.io ALT')
     reCaptchaParam = '' if reCaptchaToken == None else '&captcha=' + reCaptchaToken
     doh_adapter = DNSOverHTTPSAdapter(provider='cloudflare')
@@ -37,18 +37,20 @@ def doCrawl(reCaptchaToken = None):
             print()
     elif response.status_code == 400:
         logger.warn('Captcha required. Trying solving...')
-        #token = recaptcha.resolve_v2('https://easymc.io/get?new')
+        # token = recaptcha.resolve_v2('https://easymc.io/get?new')
         # logger.info(token)
         logger.error('reCaptcha solver was not completed')
-        #doCrawl(token)
+        # doCrawl(token)
     else:
         logger.error('{} | {}'.format(response.status_code, response.json()['error']))
 
-async def loopCrawl():
+
+async def loop_crawl():
     while True:
-        doCrawl()
+        do_crawl()
         time.sleep(60)
 
-def startCrawl():
+
+def start_crawl():
     loop = asyncio.get_event_loop()
-    loop.run_until_complete(loopCrawl())
+    loop.run_until_complete(loop_crawl())

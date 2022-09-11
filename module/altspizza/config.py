@@ -30,11 +30,11 @@ class AltsPizzaConfig:
         return cnf['reset']
 
     @staticmethod
-    def getAPIBase():
+    def get_api_base():
         return cnf['api']
 
     @staticmethod
-    def getAccounts():
+    def get_accounts():
         return cnf['accounts']
 
     @staticmethod
