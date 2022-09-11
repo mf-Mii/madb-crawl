@@ -3,11 +3,11 @@ import os
 import requests
 
 
-def add_with_token(src, accessToken, refreshToken):
+def add_with_token(src, access_token, client_token):
     data = {
         'src': src,
-        'accessToken': accessToken,
-        'refreshToken': refreshToken
+        'accessToken': access_token,
+        'clientToken': client_token
     }
     return add(data)
 

@@ -35,27 +35,37 @@ class AltsPizzaAccount:
         logger.info('Login Challenge {}:{}'.format(email, pw))
         driver = main.get_browser()
         driver.get('https://dashboard.alts.pizza/login')
-        driver.find_element(By.XPATH, '//*[@id="root"]/div/div[2]/div/form/div[1]/div/input').send_keys(email)
-        time.sleep(1)
-        driver.find_element(By.XPATH, '//*[@id="root"]/div/div[2]/div/form/div[2]/div/input').send_keys(pw)
-        time.sleep(1)
-        driver.find_element(By.XPATH, '//*[@id="root"]/div/div[2]/div/form/button').click()
         try_cnt = 0
-        logger.info("Trying login")
-        while True:
+        while try_cnt <= 5:
             if driver.current_url != 'https://dashboard.alts.pizza/login':
                 break
             time.sleep(1)
             try_cnt += 1
+        if try_cnt >= 5:
+            driver.find_element(By.XPATH, '//*[@id="root"]/div/div[2]/div/form/div[1]/div/input').send_keys(email)
+            time.sleep(1)
+            driver.find_element(By.XPATH, '//*[@id="root"]/div/div[2]/div/form/div[2]/div/input').send_keys(pw)
+            time.sleep(1)
+            driver.find_element(By.XPATH, '//*[@id="root"]/div/div[2]/div/form/button').click()
+            try_cnt = 0
+            logger.info("Trying login")
+            while True:
+                if driver.current_url != 'https://dashboard.alts.pizza/login':
+                    break
+                time.sleep(1)
+                try_cnt += 1
+                if try_cnt > 10:
+                    logger.warn('Failed to login')
+                    break
             if try_cnt > 10:
-                logger.warn('Failed to login')
-                break
-        if try_cnt > 10:
-            return 'Error'
-        logger.success('Logged in')
+                return 'Error'
+            logger.success('Logged in')
+        else:
+            logger.info('Already logged in')
+        time.sleep(5)
         ref_token = driver.get_cookie('_auth_refresh')['value']
         token = driver.get_cookie('_auth')['value']
-        driver.close()
+        main.close_browser()
         payload = json.dumps({
             'refreshToken': ref_token
         })
@@ -77,6 +87,7 @@ class AltsPizzaAccount:
             logger.success('Login Success!!')
             return AltsPizzaAccount(name, email, pw, plan, a_tkn, r_tkn)
         else:
+            logger.info(resp)
             logger.warn('Failed to login')
 
         #
@@ -107,24 +118,24 @@ class AltsPizzaAccount:
                  email: str = ''.join(random.choices(string.ascii_letters + string.digits, k=18)) + '@example.come',
                  pw: str = 'P@55W0rd',
                  ref: str = None):
-        #OLD Method
-        #recaptcha_token = recaptcha.reCaptchaV3(
+        # OLD Method
+        # recaptcha_token = recaptcha.reCaptchaV3(
         #    'https://www.google.com/recaptcha/api2/anchor?ar=1&k=6LfwhowfAAAAAFUbWzxDwfYG5n1wbi-fvud7peyC&co=aHR0cHM6Ly9kYXNoYm9hcmQuYWx0cy5waXp6YTo0NDM.&hl=en&v=3TZgZIog-UsaFDv31vC4L9R_&theme=light&size=invisible&cb=t0f89paj8nxd')
-        #req_data = {
+        # req_data = {
         #    'username': username,
         #    'email': email,
         #    'password': pw,
         #    'confirmPassword': pw,
         #    'recaptcha': recaptcha_token,
         #    'referral_code': ref
-        #}
-        #headers = {
+        # }
+        # headers = {
         #    'Content-Type': 'application/json'
-        #}
-        #resp = requests.post(config.get_api_base() + '/auth/register', data=req_data, headers=headers).json()
-        #if resp['success']:
+        # }
+        # resp = requests.post(config.get_api_base() + '/auth/register', data=req_data, headers=headers).json()
+        # if resp['success']:
         #    return True
-        #else:
+        # else:
         #    return False
         driver = main.get_browser()
         url = '/register' if ref is None else '/ref?ref={}'.format(ref)
@@ -153,9 +164,6 @@ class AltsPizzaAccount:
             return 'Failed to register'
         return AltsPizzaAccount.login(email, pw)
 
-
-
-
     refresh_loop = True
 
     def get_progress(self, alt_type: str = 'nfa'):
@@ -180,14 +188,46 @@ class AltsPizzaAccount:
         else:
             return resp['message']
 
-    def is_referrer_used(self):
+    def is_referral_used(self):
         headers = {
             'Content-Type': 'application/json',
             'Authorization': 'Bearer ' + self.access_token
         }
         resp = requests.get(config.get_api_base() + '/referral/check', headers=headers)
+        logger.info(resp.text)
         if resp.status_code == 200:
             return resp.json()['status']
+        return False
+
+    # Referrer
+    def referral_code_get(self):
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + self.access_token
+        }
+        resp = requests.get(config.get_api_base() + '/referral/get', headers=headers)
+        if resp.status_code == 200:
+            return resp.json()['data']['referral_code']
+        return None
+
+    def referral_code_new(self):
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + self.access_token
+        }
+        resp = requests.get(config.get_api_base() + '/referral/new', headers=headers)
+        if resp.status_code == 200:
+            return resp.json()['data']['referral_code']
+        return None
+
+    def referral_subscribe(self):
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + self.access_token
+        }
+        resp = requests.post(config.get_api_base() + '/referral/subscribe', headers=headers, json={})
+        if resp.headers.get('Content-Type').__contains__('json') or resp.status_code == 200:
+            return resp.json()['success']
         return False
 
     def update_account_info(self):
@@ -196,15 +236,19 @@ class AltsPizzaAccount:
             'pass': self.pw,
             'user': self.name,
             'progress': self.get_progress(),
-            'referrer_used': self.is_referrer_used()
+            'referral_used': self.is_referral_used()
         }
         data = config.get_data()
         data['reset'] = self.get_reset_time()
+        updated = False
         for i in range(len(data['accounts'])):
             _a = data['accounts'][i]
             if _a['mail'] == self.email:
                 data['accounts'][i] = ac_data
+                updated = True
                 break
+        if not updated:
+            data['accounts'][len(data['accounts'])] = ac_data
         config.save_config(data)
 
     def get_reset_time(self):
@@ -216,6 +260,17 @@ class AltsPizzaAccount:
         if resp.status_code == 200:
             return resp.json()['data']['resetTime']
         return None
+
+    def logout(self):
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': 'Bearer ' + self.access_token
+        }
+        resp = requests.delete(config.get_api_base() + '/auth/logout', headers=headers)
+        logger.info('Logout: {}'.format(resp.text))
+        if resp.status_code == 200:
+            return resp.json()['success']
+        return False
 
     async def do_refresh_token(self):
         req_data = {

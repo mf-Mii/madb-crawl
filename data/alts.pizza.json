@@ -1,10 +1,12 @@
 {
     "api": "https://altspizza.herokuapp.com",
+    "reset": "",
     "accounts": [
         {
             "mail": "81sAlSp@gov.rua",
             "pass": "PA55W0RDa",
-            "referrer_used": true
+            "progress": 0,
+            "referral_used": true
         }
     ]
 }
